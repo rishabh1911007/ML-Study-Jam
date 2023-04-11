@@ -1,0 +1,404 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNAt7kpTvP26t59E6Y7lsTu",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/rishabh1911007/ML-Study-Jam/blob/main/4\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "FcqjM6ZTuw29"
+      },
+      "outputs": [],
+      "source": [
+        "# ctrl + enter to run the code \n",
+        "# shift + enter to run the code \n",
+        "# alt + enter to run the code and add a new line below \n",
+        "# ctlr + M + B to add a new line"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "id": "I3ckUnuJwYq8"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import drive "
+      ],
+      "metadata": {
+        "id": "_TqormQCwH44"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "drive.mount('/content/drive') #mount the google drive"
+      ],
+      "metadata": {
+        "id": "BOjzWWUBu3sR"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#import necessary files\n",
+        "\n",
+        "import tensorflow as tf       # tensorflow used to train model related to images \n",
+        "from tensorflow.keras import models, layers         # keras sublibrary give the max pulling layers, convolutional layer, dense layer and hidden layers for training\n",
+        "import matplotlib.pyplot as plt                 # visualise the dataset"
+      ],
+      "metadata": {
+        "id": "WfJ1lc5Cu8MX"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#initilize the variables and hyperparameters\n",
+        "\n",
+        "BATCH_SIZE = 16           # tell the no. of images goes for every time or for every loop to train\n",
+        "IMAGE_SIZE = 128          # no. of pixel in width and height and both will be same\n",
+        "CHANNELS=3                # RGB image so 3 if greyscale image then 1 channel\n",
+        "EPOCHS=50                 # it is like no. of loop"
+      ],
+      "metadata": {
+        "id": "IRqi1DBPu_pz"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#import the dataset\n",
+        "dataset = tf.keras.preprocessing.image_dataset_from_directory(\n",
+        "    \"/content/drive/MyDrive/Iris_Image_Dataset\",          # import your data \n",
+        "    seed=123, \n",
+        "    shuffle=True,         # to shuffle the data in the dataset\n",
+        "    image_size=(IMAGE_SIZE,IMAGE_SIZE),     # pixel in width and height and both will be same\n",
+        "    batch_size=BATCH_SIZE       # gives the batch size which is declared above\n",
+        ")"
+      ],
+      "metadata": {
+        "id": "0OEp6rBXxbfw"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "class_names = dataset.class_names         # to set the class names of your dataset in a variable\n",
+        "class_names                 # to print the class names"
+      ],
+      "metadata": {
+        "id": "KmLfZkywxyrU"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#visualize the dataset\n",
+        "plt.figure(figsize=(8, 8))\n",
+        "for image_batch, labels_batch in dataset.take(1):\n",
+        "    for i in range(12):\n",
+        "        ax = plt.subplot(3, 4, i + 1)\n",
+        "        plt.imshow(image_batch[i].numpy().astype(\"uint8\"))\n",
+        "        plt.title(class_names[labels_batch[i]])\n",
+        "        plt.axis(\"off\")"
+      ],
+      "metadata": {
+        "id": "5MItL3_xyUTG"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "len(dataset)              # to print the value of dataset size divided by the batch size"
+      ],
+      "metadata": {
+        "id": "EeXXU5X-yiEQ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\n",
+        "#function to split the dataset into training , validation and testing data\n",
+        "\n",
+        "def get_dataset_partitions_tf(ds, train_split=0.8, val_split=0.1, test_split=0.1, shuffle=True, shuffle_size=10000):              # divide the dataset into three parts 80%, 10%, 10%\n",
+        "    assert (train_split + test_split + val_split) == 1                                              # validation data is used to improve the performance of training data\n",
+        "    \n",
+        "    ds_size = len(ds)\n",
+        "    \n",
+        "    if shuffle:\n",
+        "        ds = ds.shuffle(shuffle_size, seed=12)\n",
+        "    \n",
+        "    train_size = int(train_split * ds_size)\n",
+        "    val_size = int(val_split * ds_size)\n",
+        "    \n",
+        "    train_ds = ds.take(train_size)    \n",
+        "    val_ds = ds.skip(train_size).take(val_size)\n",
+        "    test_ds = ds.skip(train_size).skip(val_size)\n",
+        "    \n",
+        "    return train_ds, val_ds, test_ds"
+      ],
+      "metadata": {
+        "id": "f8Fek9e1yx6x"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "train_ds, val_ds, test_ds = get_dataset_partitions_tf(dataset)        # calling the function"
+      ],
+      "metadata": {
+        "id": "CjOHjCrLy2H3"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\n",
+        "print(len(train_ds))        # print the data length of each type\n",
+        "print(len(val_ds))\n",
+        "print(len(test_ds))"
+      ],
+      "metadata": {
+        "id": "sA2qUEHy2YDR"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#perform autotune on dataset  \n",
+        "\n",
+        "train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)          # \n",
+        "val_ds = val_ds.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)\n",
+        "test_ds = test_ds.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)"
+      ],
+      "metadata": {
+        "id": "97Eukbts2fhU"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\n",
+        "#define the layers\n",
+        "\n",
+        "input_shape = (BATCH_SIZE, IMAGE_SIZE, IMAGE_SIZE, CHANNELS)      # shape defining of model   \n",
+        "n_classes = 3       # total classes of dataset\n",
+        "\n",
+        "model = models.Sequential([\n",
+        "    layers.Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)),        # defining the layers of convolutional model and total 32 kernels are using in this layer and its size is 3x3 matrix and kernels are used to convert the matrix(representation of image) into smaller size convolved feature map matrix\n",
+        "    layers.MaxPooling2D(pool_size=(2, 2)),                            #  reduce the size of the convolved feature map matrix and make a new max pooling or avg pooling matrix and we keep repeating this and above step to reduce the size of matrix     \n",
+        "    layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),     # activation function decides which neuron is to be activated and which to be deactivated in model which is in between the layers\n",
+        "    layers.MaxPooling2D(pool_size=(2, 2)),                      # and we put a limited layers becoz if we train with large no. or layers then the mode will not be able to learn further by testing or any other data\n",
+        "    layers.Conv2D(128, kernel_size=(3, 3), activation='relu'),    # if there will be large no. of layers then model can become overfit and then it will give less accuracy of answers if the data if from outside of training data \n",
+        "    layers.MaxPooling2D(pool_size=(2, 2)),\n",
+        "    layers.Flatten(),\n",
+        "    layers.Dense(256, activation='relu'),\n",
+        "    layers.Dropout(0.5),\n",
+        "    layers.Dense(128, activation='relu'),\n",
+        "    layers.Dropout(0.3),\n",
+        "    layers.Dense(n_classes, activation='softmax')\n",
+        "])\n",
+        "\n",
+        "model.build(input_shape=input_shape)"
+      ],
+      "metadata": {
+        "id": "LSvERNNR2jgR"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#compile the model\n",
+        "model.compile(\n",
+        "    optimizer='adam',\n",
+        "    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),      # losses should be minimum\n",
+        "    metrics=['accuracy']          # accuracy should be high\n",
+        ")\n",
+        "model.summary()"
+      ],
+      "metadata": {
+        "id": "DSYB7vaoogj5"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#fit the model\n",
+        "history = model.fit(              #yaha pe hm model ko teeno type ke deta de rahe hain\n",
+        "    train_ds,\n",
+        "    batch_size=BATCH_SIZE,\n",
+        "    validation_data=val_ds,\n",
+        "    verbose=1,\n",
+        "    epochs=50,\n",
+        ")"
+      ],
+      "metadata": {
+        "id": "PnGpCbFNohOF"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#visulaize the loss and accuracy \n",
+        "\n",
+        "import matplotlib.pylab as plt\n",
+        "import numpy as np\n",
+        "\n",
+        "acc = history.history['accuracy']\n",
+        "val_acc = history.history['val_accuracy']\n",
+        "\n",
+        "loss = history.history['loss']\n",
+        "val_loss = history.history['val_loss']\n",
+        "\n",
+        "epochs_range = range(50)\n",
+        "\n",
+        "plt.figure(figsize=(10, 4))\n",
+        "plt.subplot(1, 2, 1)\n",
+        "plt.plot(epochs_range, acc, label='Training Accuracy')\n",
+        "plt.plot(epochs_range, val_acc, label='Validation Accuracy')\n",
+        "plt.legend(loc='lower right')\n",
+        "plt.title('Training and Validation Accuracy')\n",
+        "plt.ylabel(\"Accuracy (training and validation)\")\n",
+        "plt.xlabel(\"Training Steps\")\n",
+        "\n",
+        "plt.subplot(1, 2, 2)\n",
+        "plt.plot(epochs_range, loss, label='Training Loss')\n",
+        "plt.plot(epochs_range, val_loss, label='Validation Loss')\n",
+        "plt.legend(loc='upper right')\n",
+        "plt.title('Training and Validation Loss')\n",
+        "plt.ylabel(\"Loss (training and validation)\")\n",
+        "plt.xlabel(\"Training Steps\")\n",
+        "plt.show()"
+      ],
+      "metadata": {
+        "id": "Se7g3ltrrGdg"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#get confusion matrix\n",
+        "\n",
+        "from sklearn.metrics import confusion_matrix\n",
+        "import numpy as np\n",
+        "\n",
+        "# Get the true labels and predicted labels for the test set\n",
+        "y_true = []\n",
+        "y_pred = []\n",
+        "for x, y in test_ds:\n",
+        "    y_true.extend(y.numpy())\n",
+        "    y_pred.extend(np.argmax(model.predict(x), axis=-1))\n",
+        "\n",
+        "# Create the confusion matrix\n",
+        "cm = confusion_matrix(y_true, y_pred)\n",
+        "\n",
+        "# Print the confusion matrix\n",
+        "print(cm)"
+      ],
+      "metadata": {
+        "id": "N8mpN7KFrg0p"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#get confusion matrix\n",
+        "\n",
+        "from sklearn.metrics import confusion_matrix\n",
+        "import numpy as np\n",
+        "import seaborn as sns\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "y_true = []\n",
+        "y_pred = []\n",
+        "for x, y in test_ds:\n",
+        "    y_true.extend(y.numpy())\n",
+        "    y_pred.extend(np.argmax(model.predict(x), axis=-1))\n",
+        "\n",
+        "# Create the confusion matrix\n",
+        "cm = confusion_matrix(y_true, y_pred)\n",
+        "\n",
+        "# Define the labels for the confusion matrix\n",
+        "labels = ['iris-setosa', 'iris-versicolour', 'iris-virginica']\n",
+        "\n",
+        "# Create the heatmap with the confusion matrix\n",
+        "sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)\n",
+        "\n",
+        "# Add labels and title to the plot\n",
+        "plt.xlabel('Predicted labels')\n",
+        "plt.ylabel('True labels')\n",
+        "plt.title('Confusion Matrix')"
+      ],
+      "metadata": {
+        "id": "XBYGSAQCrkFO"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
